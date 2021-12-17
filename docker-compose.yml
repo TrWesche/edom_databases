@@ -1,0 +1,62 @@
+version: '3.1'
+
+services:
+    # https://hub.docker.com/r/timescale/timescaledb/tags?page=1&ordering=last_updated
+    # https://severalnines.com/database-blog/introduction-timescaledb#:~:text=One%20of%20the%20most%20convenient%20ways%20to%20play,-d%20--name%20timescaledb%20-p%205432%3A5432%20-e%20POSTGRES_PASSWORD%3Dseveralnines%20timescale%2Ftimescaledb
+    db-postgresql-edom:
+        image: timescale/timescaledb:latest-pg12
+        restart: always
+        ports:
+            - 5432:5432
+        environment:
+            POSTGRES_USER: pgDBadmin
+            POSTGRES_PASSWORD: pgDBPassword
+            POSTGRES_DB: edomcore
+            PGDATA: /var/lib/postgresql/data
+        networks:
+            - backend
+        volumes:
+            - postgresql-edom-vol:/var/lib/postgresql/data
+    # https://www.pgadmin.org/docs/pgadmin4/latest/container_deployment.html
+    svc-pgadmin-edom:
+        image: dpage/pgadmin4:latest
+        restart: always
+        ports:
+            - 5000:5000
+        environment:
+            PGADMIN_DEFAULT_EMAIL: admin@edom.com
+            PGADMIN_DEFAULT_PASSWORD: pgDBPassword
+            PGADMIN_LISTEN_PORT: 5000
+        networks:
+            - backend
+        volumes:
+            - pgadmin-edom-vol:/var/lib/pgadmin
+    db-redis-edom:
+    # https://edward-cernera.medium.com/intro-to-redis-with-docker-compose-8d53962336cb
+    # https://kb.objectrocket.com/redis/run-redis-with-docker-compose-1055
+        image: redis:latest
+        command: redis-server --requirepass ${REDIS_PASS:-redisDBPassword}
+        # restart: always
+        ports:
+            - 6379:6379
+        # environment:   
+        #   REDIS_REPLICATION_MODE=master
+        networks:
+            - backend
+        volumes:
+            - redis-edom-vol:/data
+            - redis-edom-config-vol:/usr/local/etc/redis/redis.conf
+
+networks:
+    backend:
+        driver: bridge
+
+volumes:
+    postgresql-edom-vol:
+        driver: local
+    pgadmin-edom-vol:
+        driver: local
+    redis-edom-vol:
+        driver: local
+    redis-edom-config-vol:
+        driver: local
